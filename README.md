@@ -1,3 +1,13 @@
+---
+title: Bug Triage OpenEnv
+emoji: 🐛
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_file: server/app.py
+pinned: false
+---
+
 # Bug Triage & Patch Validation — OpenEnv Environment
 
 An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI agent receives **buggy Python code** with failing unit tests and must **diagnose the root cause**, **identify the faulty line**, and **produce a correct patch**. Grading is fully deterministic — patches are scored by actually executing the test suite.
