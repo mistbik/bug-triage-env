@@ -1,0 +1,47 @@
+name: bug_triage
+version: 0.1.0
+description: >
+  Bug Triage & Patch Validation Environment.
+  An AI agent receives buggy Python code with failing unit tests and must
+  diagnose the root cause, identify the faulty line, and produce a correct patch.
+  Features three difficulty-tiered tasks (identify, fix, full triage) across
+  9 handcrafted bug scenarios with deterministic grading via actual test execution.
+
+tasks:
+  - id: identify_bug
+    name: Bug Identification
+    description: >
+      Read the buggy code and failing tests, then identify and describe the bug.
+      Score is based on correctly pinpointing the bug line and quality of the
+      description.
+    difficulty: easy
+    max_steps: 5
+
+  - id: fix_bug
+    name: Bug Fix
+    description: >
+      Read the buggy code and failing tests, then submit a correct patch.
+      Score is based on the proportion of tests that pass after applying the
+      patch.
+    difficulty: medium
+    max_steps: 10
+
+  - id: full_triage
+    name: Full Bug Triage
+    description: >
+      Perform complete bug triage: read code, run tests, identify the bug,
+      and submit a correct patch. Evaluated on identification accuracy,
+      patch quality, description quality, and step efficiency.
+    difficulty: hard
+    max_steps: 15
+
+deployment:
+  docker:
+    dockerfile: server/Dockerfile
+    build_context: .
+  hf_spaces:
+    sdk: docker
+    hardware: cpu-basic
+    resources:
+      vcpu: 2
+      memory: 8gb

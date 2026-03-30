@@ -1,0 +1,17 @@
+{
+  "identify_bug": {
+    "easy": 1.0,
+    "medium": 0.4,
+    "hard": 0.0526
+  },
+  "fix_bug": {
+    "easy": 1.0,
+    "medium": 0.73,
+    "hard": 0.56
+  },
+  "full_triage": {
+    "easy": 0.96,
+    "medium": 0.75,
+    "hard": 0.4084
+  }
+}
