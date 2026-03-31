@@ -30,7 +30,7 @@ from models import BugTriageAction
 
 class TestScenarios:
     def test_scenario_count(self):
-        assert len(SCENARIOS) == 9
+        assert len(SCENARIOS) == 15
 
     def test_all_scenarios_have_required_keys(self):
         required = {
