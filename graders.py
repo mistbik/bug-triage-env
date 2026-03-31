@@ -196,6 +196,7 @@ TASKS = [
             "easy_wrong_return",
             "easy_wrong_comparison",
             "easy_missing_return",
+            "easy_wrong_init",
         ],
     },
     {
@@ -214,6 +215,8 @@ TASKS = [
             "medium_missing_edge",
             "medium_wrong_default",
             "medium_mutation_bug",
+            "medium_index_error",
+            "medium_sentinel_bug",
         ],
     },
     {
@@ -233,6 +236,10 @@ TASKS = [
             "hard_algorithm_bug",
             "hard_scope_bug",
             "hard_memoization_bug",
+            "hard_accumulator_bug",
+            "hard_recursion_bug",
+            "multi_interface_mismatch",
+            "multi_wrong_delegation",
         ],
     },
 ]
