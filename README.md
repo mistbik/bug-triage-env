@@ -1,12 +1,9 @@
 ---
-title: Bug Triage OpenEnv
+title: Bug Triage Environment
 emoji: 🐛
 colorFrom: blue
-colorTo: purple
+colorTo: green
 sdk: docker
-sdk_version: "0.0.1"
-python_version: "3.10"
-app_file: app.py
 pinned: false
 ---
 
@@ -33,22 +30,28 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 
 ## Scenarios
 
-9 handcrafted bug scenarios across 3 difficulty tiers:
+15 handcrafted bug scenarios across 3 difficulty tiers (5 per tier):
 
 ### Easy
 - **off_by_one** — `range(1, n)` skips the first element; should start at `0`
 - **wrong_operator** — integer division `//` where float division `/` is needed
-- **wrong_return** — `!=` used instead of `==` in a filter predicate
+- **wrong_return** — `!=` used instead of `==` in a palindrome check
+- **wrong_comparison** — `<` used instead of `>` in a clamp upper-bound check
+- **missing_return** — function computes the correct result but never returns it
 
 ### Medium
-- **boundary_check** — binary search uses `len(arr)` instead of `len(arr) - 1`
-- **logic_error** — rate limiter forgets to record new request timestamps
-- **missing_edge** — list flattener doesn't recurse into nested sublists
+- **boundary_check** — binary search initialises `high` to `len(arr)` instead of `len(arr) - 1`
+- **logic_error** — rate limiter never records allowed timestamps, so it never blocks
+- **missing_edge** — list flattener calls `extend(item)` instead of `extend(flatten(item))`
+- **wrong_default** — `dict.get(word, 1)` seeds every first-seen word at count 2 instead of 1
+- **mutation_bug** — `totals = numbers` aliases the input list, silently mutating the caller's data
 
 ### Hard
-- **concurrency_bug** — LRU cache `get()` doesn't promote the accessed key
-- **state_machine** — CSV parser drops trailing empty fields
-- **algorithm_bug** — cycle detection uses a single visited set instead of visited + recursion stack
+- **concurrency_bug** — LRU cache `get()` returns the value without promoting the key in access order
+- **state_machine** — CSV parser guards the final field append with `if current`, dropping empty trailing fields
+- **algorithm_bug** — cycle detection uses a single `visited` set, causing false positives on diamond DAGs
+- **scope_bug** — lambda closures in a loop capture `i` by reference; all functions use the last value of `i`
+- **memoization_bug** — mutable default argument `cache={}` is shared across all calls to `memoize()`
 
 ## Action Space
 
@@ -130,23 +133,25 @@ Rewards provide signal throughout the trajectory — not just at episode end.
 
 ## Baseline Scores
 
-Produced by running scripted oracle agents at three capability tiers (see `demo_scores.py`):
+Produced by running scripted agents at three capability tiers (see `demo_scores.py`). No API key required — these are deterministic oracle scripts, not LLM calls.
 
-| Task | Easy | Medium | Hard |
-|------|------|--------|------|
+| Task | Easy (Oracle) | Medium (Capable) | Hard (Weak) |
+|------|:---:|:---:|:---:|
 | `identify_bug` | 1.000 | 0.400 | 0.053 |
 | `fix_bug` | 1.000 | 0.730 | 0.560 |
 | `full_triage` | 0.960 | 0.750 | 0.408 |
 
 **Agent tiers:**
-- **Oracle (easy)** — correct line, full description, correct patch
-- **Capable (medium)** — line off by 2, partial description, near-correct patch (4/5 tests pass)
-- **Weak (hard)** — wrong line, generic description, no fix submitted
+- **Oracle (easy)** — correct line, full description, correct patch in optimal step sequence
+- **Capable (medium)** — line off by 2, partial description, near-correct patch (fails 1–3 tests)
+- **Weak (hard)** — wrong line, generic description, submits the original buggy code unchanged
 
 > **Difficulty curve**: scores decrease monotonically easy → medium → hard across all tasks.  
-> Hard partial scores reflect that some tests happen to pass even on the unchanged buggy code in the hard scenarios.
+> Hard partial scores reflect tests that happen to pass even on the unchanged buggy code.
 
-`inference.py` runs a real LLM (via `HF_TOKEN` / `API_BASE_URL` / `MODEL_NAME`) through all 3 tasks × 3 scenario tiers and writes `inference_results.json`.
+### LLM Inference
+
+`inference.py` runs a real LLM through all 3 tasks × 3 scenario tiers and writes `inference_results.json`. This requires an API key (see [Environment Variables](#environment-variables) below). The deterministic `demo_scores.py` baseline above is sufficient to verify the difficulty curve without one.
 
 ## Quick Start
 
@@ -166,7 +171,15 @@ uvicorn app:app --host 0.0.0.0 --port 7860
 # Server starts at http://localhost:7860
 ```
 
-### 3. Run baseline inference (requires API key)
+### 3. Run deterministic difficulty-curve demo (no API key needed)
+
+```bash
+python demo_scores.py
+```
+
+Runs three scripted agents (oracle / capable / weak) and prints the score table. No LLM or API key required.
+
+### 4. Run baseline LLM inference (requires API key)
 
 ```bash
 export HF_TOKEN="hf_..."          # HuggingFace API key
@@ -179,16 +192,10 @@ python inference.py
 
 Results are written to `inference_results.json`.
 
-### 4. Run deterministic difficulty-curve demo (no API key needed)
-
-```bash
-python demo_scores.py
-```
-
 ### 5. Run tests
 
 ```bash
-pytest tests/ -v   # 40 tests
+pytest tests/ -v   # 46 tests
 ```
 
 ### 6. Validate spec compliance
@@ -231,11 +238,11 @@ docker run -p 7860:7860 bug-triage-env
 ```
 bug_triage_env/
 ├── models.py              # Pydantic Action / Observation models
-├── scenarios.py           # 9 handcrafted bug scenarios
+├── scenarios.py           # 15 handcrafted bug scenarios (5 per difficulty tier)
 ├── graders.py             # 3 deterministic grader functions + TASKS registry
 ├── client.py              # Typed EnvClient subclass
 ├── inference.py           # Baseline LLM inference script (OpenAI client)
-├── demo_scores.py         # Difficulty-curve demo (no LLM required)
+├── demo_scores.py         # Difficulty-curve demo (no LLM or API key required)
 ├── openenv.yaml           # OpenEnv manifest
 ├── pyproject.toml         # Package + [project.scripts] entry point
 ├── uv.lock                # Locked dependency graph
@@ -247,20 +254,21 @@ bug_triage_env/
 │   ├── requirements.txt
 │   └── __init__.py
 └── tests/
-    └── test_environment.py         # 40 unit tests
+    └── test_environment.py         # 46 unit tests
 ```
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `HF_TOKEN` | Yes (for inference) | — | HuggingFace / API key |
+| `HF_TOKEN` | Only for `inference.py` | — | HuggingFace / API key for LLM inference |
 | `API_BASE_URL` | No | `https://router.huggingface.co/v1` | LLM API endpoint |
 | `MODEL_NAME` | No | `Qwen/Qwen2.5-72B-Instruct` | Model identifier |
 | `OPENAI_API_KEY` | No | — | Alternative API key (fallback to `HF_TOKEN`) |
 | `ENV_URL` | No | `http://localhost:7860` | Bug Triage server URL |
 
+> `demo_scores.py` and all unit tests run without any API key.
+
 ## License
 
 MIT
-
