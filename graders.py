@@ -190,7 +190,13 @@ TASKS = [
         ),
         "grader": "grade_identify_bug",
         "max_steps": 5,
-        "scenarios": ["easy_off_by_one", "easy_wrong_operator", "easy_wrong_return"],
+        "scenarios": [
+            "easy_off_by_one",
+            "easy_wrong_operator",
+            "easy_wrong_return",
+            "easy_wrong_comparison",
+            "easy_missing_return",
+        ],
     },
     {
         "id": "fix_bug",
@@ -206,6 +212,8 @@ TASKS = [
             "medium_boundary_check",
             "medium_logic_error",
             "medium_missing_edge",
+            "medium_wrong_default",
+            "medium_mutation_bug",
         ],
     },
     {
@@ -223,6 +231,8 @@ TASKS = [
             "hard_concurrency_bug",
             "hard_state_machine",
             "hard_algorithm_bug",
+            "hard_scope_bug",
+            "hard_memoization_bug",
         ],
     },
 ]
