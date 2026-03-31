@@ -126,6 +126,92 @@ SCENARIOS = [
         "bug_line": 4,
         "bug_description": "Comparison uses != instead of ==, inverting the logic.",
     },
+    {
+        "id": "easy_wrong_comparison",
+        "difficulty": "easy",
+        "file_name": "clamp.py",
+        "task_description": (
+            "A function that clamps a value to a range [min_val, max_val] "
+            "returns wrong results for some inputs. Find the bug and fix it."
+        ),
+        "buggy_code": (
+            "def clamp(value, min_val, max_val):\n"
+            "    \"\"\"Return value clamped to the range [min_val, max_val].\"\"\"\n"
+            "    if value < min_val:\n"
+            "        return min_val\n"
+            "    if value < max_val:\n"
+            "        return max_val\n"
+            "    return value\n"
+        ),
+        "correct_code": (
+            "def clamp(value, min_val, max_val):\n"
+            "    \"\"\"Return value clamped to the range [min_val, max_val].\"\"\"\n"
+            "    if value < min_val:\n"
+            "        return min_val\n"
+            "    if value > max_val:\n"
+            "        return max_val\n"
+            "    return value\n"
+        ),
+        "test_code": (
+            "def test_clamp_below():\n"
+            "    assert clamp(1, 5, 10) == 5\n"
+            "\n"
+            "def test_clamp_above():\n"
+            "    assert clamp(15, 5, 10) == 10\n"
+            "\n"
+            "def test_clamp_within():\n"
+            "    assert clamp(7, 5, 10) == 7\n"
+            "\n"
+            "def test_clamp_exact_min():\n"
+            "    assert clamp(5, 5, 10) == 5\n"
+            "\n"
+            "def test_clamp_exact_max():\n"
+            "    assert clamp(10, 5, 10) == 10\n"
+        ),
+        "bug_line": 5,
+        "bug_description": "Second condition uses < instead of >, so values within the valid range are incorrectly clamped to max_val.",
+    },
+    {
+        "id": "easy_missing_return",
+        "difficulty": "easy",
+        "file_name": "list_utils.py",
+        "task_description": (
+            "A function that finds the maximum value in a list always returns None. "
+            "Find the bug and fix it."
+        ),
+        "buggy_code": (
+            "def find_max(numbers):\n"
+            "    \"\"\"Return the maximum value in a non-empty list.\"\"\"\n"
+            "    max_val = numbers[0]\n"
+            "    for n in numbers[1:]:\n"
+            "        if n > max_val:\n"
+            "            max_val = n\n"
+        ),
+        "correct_code": (
+            "def find_max(numbers):\n"
+            "    \"\"\"Return the maximum value in a non-empty list.\"\"\"\n"
+            "    max_val = numbers[0]\n"
+            "    for n in numbers[1:]:\n"
+            "        if n > max_val:\n"
+            "            max_val = n\n"
+            "    return max_val\n"
+        ),
+        "test_code": (
+            "def test_find_max_basic():\n"
+            "    assert find_max([3, 1, 4, 1, 5]) == 5\n"
+            "\n"
+            "def test_find_max_single():\n"
+            "    assert find_max([7]) == 7\n"
+            "\n"
+            "def test_find_max_negatives():\n"
+            "    assert find_max([-3, -1, -4]) == -1\n"
+            "\n"
+            "def test_find_max_duplicates():\n"
+            "    assert find_max([2, 2, 2]) == 2\n"
+        ),
+        "bug_line": 6,
+        "bug_description": "Missing return statement — the function computes max_val correctly but never returns it, so it always returns None.",
+    },
     # ========== MEDIUM SCENARIOS ==========
     {
         "id": "medium_boundary_check",
@@ -303,6 +389,114 @@ SCENARIOS = [
         ),
         "bug_line": 6,
         "bug_description": "Uses extend(item) instead of extend(flatten(item)), failing to recursively flatten deeply nested lists.",
+    },
+    {
+        "id": "medium_wrong_default",
+        "difficulty": "medium",
+        "file_name": "word_counter.py",
+        "task_description": (
+            "A word frequency counter always reports counts that are one too high. "
+            "Find the bug and fix it."
+        ),
+        "buggy_code": (
+            "def group_by(items, key_fn):\n"
+            "    \"\"\"Group items into a dict by key_fn(item).\"\"\"\n"
+            "    groups = {}\n"
+            "    for item in items:\n"
+            "        k = key_fn(item)\n"
+            "        if k not in groups:\n"
+            "            groups[k] = []\n"
+            "        groups[k].append(item)\n"
+            "    return groups\n"
+            "\n"
+            "def count_words(text):\n"
+            "    \"\"\"Return word frequency dict from a string.\"\"\"\n"
+            "    counts = {}\n"
+            "    for word in text.lower().split():\n"
+            "        counts[word] = counts.get(word, 1) + 1\n"
+            "    return counts\n"
+        ),
+        "correct_code": (
+            "def group_by(items, key_fn):\n"
+            "    \"\"\"Group items into a dict by key_fn(item).\"\"\"\n"
+            "    groups = {}\n"
+            "    for item in items:\n"
+            "        k = key_fn(item)\n"
+            "        if k not in groups:\n"
+            "            groups[k] = []\n"
+            "        groups[k].append(item)\n"
+            "    return groups\n"
+            "\n"
+            "def count_words(text):\n"
+            "    \"\"\"Return word frequency dict from a string.\"\"\"\n"
+            "    counts = {}\n"
+            "    for word in text.lower().split():\n"
+            "        counts[word] = counts.get(word, 0) + 1\n"
+            "    return counts\n"
+        ),
+        "test_code": (
+            "def test_count_single():\n"
+            "    assert count_words('hello') == {'hello': 1}\n"
+            "\n"
+            "def test_count_repeated():\n"
+            "    assert count_words('hi hi hi') == {'hi': 3}\n"
+            "\n"
+            "def test_count_mixed():\n"
+            "    assert count_words('a b a') == {'a': 2, 'b': 1}\n"
+            "\n"
+            "def test_count_case():\n"
+            "    assert count_words('Hi hi') == {'hi': 2}\n"
+            "\n"
+            "def test_group_by_len():\n"
+            "    assert group_by(['a', 'bb', 'cc', 'd'], len) == {1: ['a', 'd'], 2: ['bb', 'cc']}\n"
+        ),
+        "bug_line": 15,
+        "bug_description": "dict.get() default is 1 instead of 0, so the first occurrence of every word is counted as 2.",
+    },
+    {
+        "id": "medium_mutation_bug",
+        "difficulty": "medium",
+        "file_name": "running_totals.py",
+        "task_description": (
+            "A function that computes running totals of a list is silently mutating "
+            "the input list as a side effect. Find the bug and fix it."
+        ),
+        "buggy_code": (
+            "def running_totals(numbers):\n"
+            "    \"\"\"Return a list where each element is the cumulative sum up to that index.\"\"\"\n"
+            "    totals = numbers\n"
+            "    for i in range(1, len(totals)):\n"
+            "        totals[i] = totals[i - 1] + totals[i]\n"
+            "    return totals\n"
+        ),
+        "correct_code": (
+            "def running_totals(numbers):\n"
+            "    \"\"\"Return a list where each element is the cumulative sum up to that index.\"\"\"\n"
+            "    totals = list(numbers)\n"
+            "    for i in range(1, len(totals)):\n"
+            "        totals[i] = totals[i - 1] + totals[i]\n"
+            "    return totals\n"
+        ),
+        "test_code": (
+            "def test_running_basic():\n"
+            "    assert running_totals([1, 2, 3, 4]) == [1, 3, 6, 10]\n"
+            "\n"
+            "def test_running_single():\n"
+            "    assert running_totals([5]) == [5]\n"
+            "\n"
+            "def test_running_zeros():\n"
+            "    assert running_totals([0, 0, 0]) == [0, 0, 0]\n"
+            "\n"
+            "def test_no_mutation():\n"
+            "    inp = [1, 2, 3]\n"
+            "    running_totals(inp)\n"
+            "    assert inp == [1, 2, 3]\n"
+            "\n"
+            "def test_running_negatives():\n"
+            "    assert running_totals([-1, -2, -3]) == [-1, -3, -6]\n"
+        ),
+        "bug_line": 3,
+        "bug_description": "totals = numbers assigns a reference instead of a copy, so the function mutates the caller's list and produces wrong results on subsequent calls.",
     },
     # ========== HARD SCENARIOS ==========
     {
@@ -548,6 +742,115 @@ SCENARIOS = [
         ),
         "bug_line": 7,
         "bug_description": "Uses a single 'visited' set instead of separating 'visited' and 'recursion stack'. This causes false positives on DAGs where a node is reachable via multiple paths (diamond pattern).",
+    },
+    {
+        "id": "hard_scope_bug",
+        "difficulty": "hard",
+        "file_name": "closures.py",
+        "task_description": (
+            "A factory function that creates a list of multiplier functions has a bug. "
+            "All returned functions behave identically instead of each using a different "
+            "multiplier. Find and fix the bug."
+        ),
+        "buggy_code": (
+            "def make_multipliers(n):\n"
+            "    \"\"\"Return a list of n functions where the i-th function multiplies its argument by i.\"\"\"\n"
+            "    funcs = []\n"
+            "    for i in range(n):\n"
+            "        funcs.append(lambda x: i * x)\n"
+            "    return funcs\n"
+        ),
+        "correct_code": (
+            "def make_multipliers(n):\n"
+            "    \"\"\"Return a list of n functions where the i-th function multiplies its argument by i.\"\"\"\n"
+            "    funcs = []\n"
+            "    for i in range(n):\n"
+            "        funcs.append(lambda x, i=i: i * x)\n"
+            "    return funcs\n"
+        ),
+        "test_code": (
+            "def test_multipliers_values():\n"
+            "    fns = make_multipliers(4)\n"
+            "    assert fns[0](10) == 0\n"
+            "    assert fns[1](10) == 10\n"
+            "    assert fns[2](10) == 20\n"
+            "    assert fns[3](10) == 30\n"
+            "\n"
+            "def test_multipliers_count():\n"
+            "    assert len(make_multipliers(5)) == 5\n"
+            "\n"
+            "def test_multipliers_zero():\n"
+            "    fns = make_multipliers(3)\n"
+            "    assert fns[0](999) == 0\n"
+            "\n"
+            "def test_multipliers_independent():\n"
+            "    fns = make_multipliers(3)\n"
+            "    assert fns[1](5) == 5\n"
+            "    assert fns[2](5) == 10\n"
+        ),
+        "bug_line": 5,
+        "bug_description": "Lambda captures the loop variable i by reference, not by value. All closures share the same i, which equals n-1 after the loop ends.",
+    },
+    {
+        "id": "hard_memoization_bug",
+        "difficulty": "hard",
+        "file_name": "memoize.py",
+        "task_description": (
+            "A memoization decorator has a subtle Python gotcha: it uses a mutable "
+            "default argument for the cache. This causes all memoized functions to "
+            "share the same cache dict across calls. Find and fix the bug."
+        ),
+        "buggy_code": (
+            "def memoize(fn, cache={}):\n"
+            "    \"\"\"Return a memoized version of fn.\"\"\"\n"
+            "    def wrapper(*args):\n"
+            "        if args not in cache:\n"
+            "            cache[args] = fn(*args)\n"
+            "        return cache[args]\n"
+            "    return wrapper\n"
+        ),
+        "correct_code": (
+            "def memoize(fn, cache=None):\n"
+            "    \"\"\"Return a memoized version of fn.\"\"\"\n"
+            "    if cache is None:\n"
+            "        cache = {}\n"
+            "    def wrapper(*args):\n"
+            "        if args not in cache:\n"
+            "            cache[args] = fn(*args)\n"
+            "        return cache[args]\n"
+            "    return wrapper\n"
+        ),
+        "test_code": (
+            "def test_memoize_correct():\n"
+            "    fn = memoize(lambda x: x * x)\n"
+            "    assert fn(4) == 16\n"
+            "\n"
+            "def test_memoize_caches():\n"
+            "    calls = []\n"
+            "    def track(x):\n"
+            "        calls.append(x)\n"
+            "        return x + 1\n"
+            "    f = memoize(track)\n"
+            "    f(5)\n"
+            "    f(5)\n"
+            "    assert len(calls) == 1\n"
+            "\n"
+            "def test_memoize_independent():\n"
+            "    f1 = memoize(lambda x: x + 1)\n"
+            "    f2 = memoize(lambda x: x + 2)\n"
+            "    assert f1(10) == 11\n"
+            "    assert f2(10) == 12\n"
+            "\n"
+            "def test_memoize_no_shared_cache():\n"
+            "    def fn_a(x): return x * 2\n"
+            "    def fn_b(x): return x * 3\n"
+            "    a = memoize(fn_a)\n"
+            "    b = memoize(fn_b)\n"
+            "    assert a(5) == 10\n"
+            "    assert b(5) == 15\n"
+        ),
+        "bug_line": 1,
+        "bug_description": "Mutable default argument cache={} is shared across all calls to memoize(). Every memoized function writes into the same dict, causing cache collisions between unrelated functions.",
     },
 ]
 
