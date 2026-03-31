@@ -30,7 +30,7 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 
 ## Scenarios
 
-15 handcrafted bug scenarios across 3 difficulty tiers (5 per tier):
+22 handcrafted bug scenarios across 3 difficulty tiers, including 2 multi-file cross-component scenarios:
 
 ### Easy
 - **off_by_one** — `range(1, n)` skips the first element; should start at `0`
@@ -38,6 +38,7 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 - **wrong_return** — `!=` used instead of `==` in a palindrome check
 - **wrong_comparison** — `<` used instead of `>` in a clamp upper-bound check
 - **missing_return** — function computes the correct result but never returns it
+- **wrong_init** — counter initialised to `1` instead of `0`, inflating every result by one
 
 ### Medium
 - **boundary_check** — binary search initialises `high` to `len(arr)` instead of `len(arr) - 1`
@@ -45,6 +46,8 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 - **missing_edge** — list flattener calls `extend(item)` instead of `extend(flatten(item))`
 - **wrong_default** — `dict.get(word, 1)` seeds every first-seen word at count 2 instead of 1
 - **mutation_bug** — `totals = numbers` aliases the input list, silently mutating the caller's data
+- **index_error** — list rotation uses `lst[:k - 1]` instead of `lst[:k]`, dropping the last prefix element
+- **sentinel_bug** — returns `-1` instead of `None` when no duplicate is found, breaking `is None` checks
 
 ### Hard
 - **concurrency_bug** — LRU cache `get()` returns the value without promoting the key in access order
@@ -52,6 +55,14 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 - **algorithm_bug** — cycle detection uses a single `visited` set, causing false positives on diamond DAGs
 - **scope_bug** — lambda closures in a loop capture `i` by reference; all functions use the last value of `i`
 - **memoization_bug** — mutable default argument `cache={}` is shared across all calls to `memoize()`
+- **accumulator_bug** — anagram grouper initialises a new group as a bare string instead of `[word]`, breaking `.append()`
+- **recursion_bug** — `median()` averages `s[n//2]` and `s[n//2+1]` instead of the two true middle elements
+
+### Multi-file (Hard)
+These two scenarios require the agent to reason across **two components in the same file** and find a cross-component inconsistency — a harder class of bug that single-function reasoning misses:
+
+- **interface_mismatch** — `Stack.push()` stores key `'val'` but `Stack.peek()` reads key `'value'`; `RPNCalculator` exercises the broken peek path
+- **wrong_delegation** — `EventBus.subscribe()` uppercases the event key but `publish()` looks up the original case; `Notifier` subscribes and publishes but never receives
 
 ## Action Space
 
@@ -195,7 +206,7 @@ Results are written to `inference_results.json`.
 ### 5. Run tests
 
 ```bash
-pytest tests/ -v   # 46 tests
+pytest tests/ -v   # 44 tests
 ```
 
 ### 6. Validate spec compliance
@@ -254,7 +265,7 @@ bug_triage_env/
 │   ├── requirements.txt
 │   └── __init__.py
 └── tests/
-    └── test_environment.py         # 46 unit tests
+    └── test_environment.py         # 44 unit tests
 ```
 
 ## Environment Variables
