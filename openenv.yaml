@@ -5,7 +5,7 @@ description: >
   An AI agent receives buggy Python code with failing unit tests and must
   diagnose the root cause, identify the faulty line, and produce a correct patch.
   Features three difficulty-tiered tasks (identify, fix, full triage) across
-  9 handcrafted bug scenarios with deterministic grading via actual test execution.
+  22 handcrafted bug scenarios with deterministic grading via actual test execution.
 
 tasks:
   - id: identify_bug
