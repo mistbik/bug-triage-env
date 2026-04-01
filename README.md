@@ -28,6 +28,8 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 | 2 | `fix_bug` | Bug Fix | Medium | 10 | Read the code + tests, then submit a corrected version that passes all tests |
 | 3 | `full_triage` | Full Bug Triage | Hard | 15 | Identify the bug **and** submit a correct patch, scored on identification + patch quality + efficiency |
 
+![Demo](Animation.gif)
+
 ## Scenarios
 
 22 handcrafted bug scenarios across 3 difficulty tiers, including 2 multi-file cross-component scenarios:
