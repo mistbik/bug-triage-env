@@ -29,6 +29,7 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 | 3 | `full_triage` | Full Bug Triage | Hard | 15 | Identify the bug **and** submit a correct patch, scored on identification + patch quality + efficiency |
 
 
+Example run of the environment showing the difficulty curve and scoring:
 
 ![Demo](Animation.gif)
 
