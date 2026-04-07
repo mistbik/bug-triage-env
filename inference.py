@@ -268,17 +268,23 @@ def main():
         print(f"Task: {task_name} ({task_id})")
         print(f"{'='*60}")
 
+        print(f"[START] task={task_id}", flush=True)
         scenario_results = []
+        step_num = 0
         for scenario_id in SCENARIO_IDS:
             difficulty = scenario_id.split("_")[0]  # easy / medium / hard
             print(f"\n  [{difficulty.upper()}] {scenario_id}")
             try:
                 result = run_episode(task_id, scenario_id)
                 reward = result.get("reward", 0.0)
+                step_num += 1
                 scenario_results.append({"scenario_id": scenario_id, "difficulty": difficulty, "reward": reward})
                 print(f"  → reward={reward:.3f}")
+                print(f"[STEP] step={step_num} scenario={scenario_id} reward={reward:.4f}", flush=True)
             except Exception as exc:
+                step_num += 1
                 print(f"  ERROR: {exc}")
+                print(f"[STEP] step={step_num} scenario={scenario_id} reward=0.0000", flush=True)
                 scenario_results.append({"scenario_id": scenario_id, "difficulty": difficulty, "reward": 0.0})
 
         rewards = [s["reward"] for s in scenario_results]
@@ -289,6 +295,7 @@ def main():
             "average": avg_reward,
         }
         print(f"\n  ─── {task_name} average: {avg_reward:.3f} ───")
+        print(f"[END] task={task_id} score={avg_reward:.4f} steps={step_num}", flush=True)
 
     # ── Summary ────────────────────────────────────────────────────────
     print(f"\n{'='*60}")
