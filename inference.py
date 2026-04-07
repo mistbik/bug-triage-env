@@ -7,8 +7,8 @@ Mandatory environment variables:
     MODEL_NAME     Model identifier  (default: Qwen/Qwen2.5-72B-Instruct)
 
 Optional:
-    OPENAI_API_KEY Fallback if HF_TOKEN not set
-    ENV_URL        Bug Triage server URL (default: http://localhost:7860)
+    LOCAL_IMAGE_NAME Name of local Docker image (if using from_docker_image())
+    ENV_URL          Bug Triage server URL (default: http://localhost:7860)
 
 Stdout format (mandatory):
     [START] task=<task_name> env=bug_triage model=<model_name>
@@ -25,15 +25,17 @@ from openai import OpenAI
 from openenv import GenericEnvClient
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration — mandatory variables (only API_BASE_URL and MODEL_NAME have defaults)
 # ---------------------------------------------------------------------------
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME   = os.environ.get("MODEL_NAME",   "Qwen/Qwen2.5-72B-Instruct")
-API_KEY      = os.environ.get("HF_TOKEN") or os.environ.get("OPENAI_API_KEY", "")
-ENV_URL      = os.environ.get("ENV_URL",      "http://localhost:7860")
-BENCHMARK    = "bug_triage"
+API_BASE_URL      = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME        = os.environ.get("MODEL_NAME",   "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN          = os.environ.get("HF_TOKEN")           # no default — must be set
+LOCAL_IMAGE_NAME  = os.environ.get("LOCAL_IMAGE_NAME")   # used if running from docker image
+ENV_URL           = os.environ.get("ENV_URL",      "http://localhost:7860")
+BENCHMARK         = "bug_triage"
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "__placeholder__")
+# All LLM calls use the OpenAI client configured via these variables
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "__placeholder__")
 
 # ---------------------------------------------------------------------------
 # Mandatory structured logging
@@ -282,8 +284,8 @@ SCENARIO_IDS = [
 
 
 def main():
-    if not API_KEY:
-        print("ERROR: Set HF_TOKEN (or OPENAI_API_KEY) before running.", file=sys.stderr)
+    if not HF_TOKEN:
+        print("ERROR: HF_TOKEN environment variable must be set before running.", file=sys.stderr)
         sys.exit(1)
 
     all_results = {}
