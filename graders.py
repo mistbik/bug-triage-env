@@ -60,6 +60,11 @@ def _normalize_code(code: str) -> str:
     return "\n".join(lines)
 
 
+def _clamp(score: float) -> float:
+    """Ensure score is strictly within (0, 1) as required by the validator."""
+    return max(0.01, min(round(score, 4), 0.99))
+
+
 def grade_identify_bug(scenario: Dict, agent_line: int, agent_description: str) -> float:
     """Grade Task 1: Bug identification.
 
@@ -94,7 +99,7 @@ def grade_identify_bug(scenario: Dict, agent_line: int, agent_description: str) 
         keyword_score = min(matched / max(len(keywords) * 0.4, 1), 1.0)
         score += 0.4 * keyword_score
 
-    return round(min(score, 1.0), 4)
+    return _clamp(score)
 
 
 def grade_fix_bug(scenario: Dict, patched_code: str) -> float:
@@ -111,7 +116,7 @@ def grade_fix_bug(scenario: Dict, patched_code: str) -> float:
     test_names = _extract_test_names(test_code)
 
     if not test_names:
-        return 0.0
+        return 0.01
 
     results = _exec_tests(patched_code, test_code, test_names)
     passing = sum(1 for r in results.values() if r["passed"])
@@ -136,7 +141,7 @@ def grade_fix_bug(scenario: Dict, patched_code: str) -> float:
         elif passing > 0:
             code_score = 0.05
 
-    return round(min(test_score + code_score, 1.0), 4)
+    return _clamp(test_score + code_score)
 
 
 def grade_full_triage(
@@ -175,7 +180,7 @@ def grade_full_triage(
     else:
         efficiency = 0.0
 
-    return round(min(identification + patch_quality + description + efficiency, 1.0), 4)
+    return _clamp(identification + patch_quality + description + efficiency)
 
 
 # Task definitions for the openenv.yaml / task registry
@@ -196,7 +201,6 @@ TASKS = [
             "easy_wrong_return",
             "easy_wrong_comparison",
             "easy_missing_return",
-            "easy_wrong_init",
         ],
     },
     {
@@ -215,8 +219,6 @@ TASKS = [
             "medium_missing_edge",
             "medium_wrong_default",
             "medium_mutation_bug",
-            "medium_index_error",
-            "medium_sentinel_bug",
         ],
     },
     {
@@ -236,10 +238,6 @@ TASKS = [
             "hard_algorithm_bug",
             "hard_scope_bug",
             "hard_memoization_bug",
-            "hard_accumulator_bug",
-            "hard_recursion_bug",
-            "multi_interface_mismatch",
-            "multi_wrong_delegation",
         ],
     },
 ]
