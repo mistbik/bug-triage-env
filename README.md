@@ -9,7 +9,7 @@ pinned: false
 
 # Bug Triage & Patch Validation — OpenEnv Environment
 
-> **Debugging accounts for roughly half of all developer time.**
+> **Debugging accounts for roughly half of alllllll developer time.**
 >
 > Chat, we have always struggled with debugging tasks. Complex issues with code with issues lodged in hard-to-find places make it hard for a newbie like me to get code running quickly. Hence, I came up with this. Please enjoy!
 >
@@ -22,12 +22,12 @@ pinned: false
 
 An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI agent receives **buggy Python code** with failing unit tests and must **diagnose the root cause**, **identify the faulty line**, and **produce a correct patch**. Grading is fully deterministic — patches are scored by actually running the test suite.
 
-## Why Bug Triage?
+## Why this?
 
 | Property | Detail |
 |---|---|
-| **Real-world relevance** | Debugging is a core engineering skill; models that can triage bugs save developer hours |
-| **Deterministic grading** | Tests either pass or they don't — no subjective rubrics, no prompt-gaming |
+| **Real-world relevance** | Debugging is a core engineering skill; models that can triage bugs save developer a ton of time! |
+| **Deterministic grading** | Tests either pass or they don't — no subjective rubrics, no prompt-gaming ehehe |
 | **Genuine difficulty** | Requires reading code, understanding intent, reasoning about edge cases, and producing correct patches |
 | **Multi-file reasoning** | Two hard scenarios require cross-component reasoning — a class of bug that single-function analysis misses |
 | **Scalable** | Easy to add more scenarios without changing graders or environment logic |
@@ -167,7 +167,7 @@ Produced by running scripted agents at three capability tiers (see `demo_scores.
 | `full_triage` | 0.960 | 0.760 | 0.408 |
 
 **Agent tiers:**
-- **Oracle (easy)** — correct line, full description, correct patch in optimal step sequence
+- **Oracle (easy-peasy lemon)** — correct line, full description, correct patch in optimal step sequence
 - **Capable (medium)** — line off by 2, partial description, near-correct patch (fails 1–3 tests)
 - **Weak (hard)** — wrong line, generic description, submits the original buggy code unchanged
 
