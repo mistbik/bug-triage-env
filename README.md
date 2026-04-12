@@ -9,16 +9,21 @@ pinned: false
 
 # Bug Triage & Patch Validation — OpenEnv Environment
 
-An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI agent receives **buggy Python code** with failing unit tests and must **diagnose the root cause**, **identify the faulty line**, and **produce a correct patch**. Grading is fully deterministic — patches are scored by actually executing the test suite.
+> **Debugging accounts for roughly half of all developer time.** This environment trains and evaluates AI agents on the full debugging loop: read code, run tests, localise the fault, and submit a correct patch. Unlike static benchmarks, grading is fully live — the test suite actually executes against the submitted patch, so there is no way to fake a pass.
+
+![Demo](Animation.gif)
+
+An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI agent receives **buggy Python code** with failing unit tests and must **diagnose the root cause**, **identify the faulty line**, and **produce a correct patch**. Grading is fully deterministic — patches are scored by actually running the test suite.
 
 ## Why Bug Triage?
 
 | Property | Detail |
 |---|---|
 | **Real-world relevance** | Debugging is a core engineering skill; models that can triage bugs save developer hours |
-| **Deterministic grading** | Tests either pass or they don't — no subjective rubrics |
+| **Deterministic grading** | Tests either pass or they don't — no subjective rubrics, no prompt-gaming |
 | **Genuine difficulty** | Requires reading code, understanding intent, reasoning about edge cases, and producing correct patches |
-| **Scalable** | Easy to add more scenarios without changing graders |
+| **Multi-file reasoning** | Two hard scenarios require cross-component reasoning — a class of bug that single-function analysis misses |
+| **Scalable** | Easy to add more scenarios without changing graders or environment logic |
 
 ## Tasks
 
@@ -28,33 +33,41 @@ An [OpenEnv](https://huggingface.co/openenv)-compliant environment where an AI a
 | 2 | `fix_bug` | Bug Fix | Medium | 10 | Read the code + tests, then submit a corrected version that passes all tests |
 | 3 | `full_triage` | Full Bug Triage | Hard | 15 | Identify the bug **and** submit a correct patch, scored on identification + patch quality + efficiency |
 
-
-
-Example run of the environment showing the difficulty curve and scoring:
-
-
-![Demo](Animation.gif)
-
-
-
 ## Scenarios
 
-9 handcrafted bug scenarios across 3 difficulty tiers:
+22 handcrafted bug scenarios across 3 difficulty tiers, including 2 multi-file cross-component scenarios:
 
-### Easy
+### Easy (6 scenarios)
 - **off_by_one** — `range(1, n)` skips the first element; should start at `0`
 - **wrong_operator** — integer division `//` where float division `/` is needed
-- **wrong_return** — `!=` used instead of `==` in a filter predicate
+- **wrong_return** — `!=` used instead of `==` in a palindrome check
+- **wrong_comparison** — `<` used instead of `>` in a clamp upper-bound check
+- **missing_return** — function computes the correct result but never returns it
+- **wrong_init** — counter initialised to `1` instead of `0`, inflating every result by one
 
-### Medium
-- **boundary_check** — binary search uses `len(arr)` instead of `len(arr) - 1`
-- **logic_error** — rate limiter forgets to record new request timestamps
-- **missing_edge** — list flattener doesn't recurse into nested sublists
+### Medium (7 scenarios)
+- **boundary_check** — binary search initialises `high` to `len(arr)` instead of `len(arr) - 1`
+- **logic_error** — rate limiter never records allowed timestamps, so it never blocks
+- **missing_edge** — list flattener calls `extend(item)` instead of `extend(flatten(item))`
+- **wrong_default** — `dict.get(word, 1)` seeds every first-seen word at count 2 instead of 1
+- **mutation_bug** — `totals = numbers` aliases the input list, silently mutating the caller's data
+- **index_error** — list rotation uses `lst[:k - 1]` instead of `lst[:k]`, dropping the last prefix element
+- **sentinel_bug** — returns `-1` instead of `None` when no duplicate is found, breaking `is None` checks
 
-### Hard
-- **concurrency_bug** — LRU cache `get()` doesn't promote the accessed key
-- **state_machine** — CSV parser drops trailing empty fields
-- **algorithm_bug** — cycle detection uses a single visited set instead of visited + recursion stack
+### Hard (7 scenarios)
+- **concurrency_bug** — LRU cache `get()` returns the value without promoting the key in access order
+- **state_machine** — CSV parser guards the final field append with `if current`, dropping empty trailing fields
+- **algorithm_bug** — cycle detection uses a single `visited` set, causing false positives on diamond DAGs
+- **scope_bug** — lambda closures in a loop capture `i` by reference; all functions use the last value of `i`
+- **memoization_bug** — mutable default argument `cache={}` is shared across all calls to `memoize()`
+- **accumulator_bug** — anagram grouper initialises a new group as a bare string instead of `[word]`, breaking `.append()`
+- **recursion_bug** — `median()` averages `s[n//2]` and `s[n//2+1]` instead of the two true middle elements
+
+### Multi-file Hard (2 scenarios)
+> These scenarios require the agent to reason across **two components in the same file** and find a cross-component inconsistency — a harder class of bug that single-function analysis cannot catch.
+
+- **interface_mismatch** — `Stack.push()` stores key `'val'` but `Stack.peek()` reads key `'value'`; `RPNCalculator` exercises the broken peek path and crashes
+- **wrong_delegation** — `EventBus.subscribe()` uppercases the event key but `publish()` looks up the original case; `Notifier` subscribes and publishes but never receives any events
 
 ## Action Space
 
@@ -97,7 +110,7 @@ Each step returns a JSON observation with:
 
 ## Reward Design
 
-Rewards provide signal throughout the trajectory — not just at episode end.
+Rewards provide dense signal throughout the trajectory — not just at episode end. The agent is incentivised to follow the correct investigative workflow before submitting a patch.
 
 | Event | Reward |
 |-------|--------|
@@ -107,7 +120,7 @@ Rewards provide signal throughout the trajectory — not just at episode end.
 | `identify_bug` — other tasks (intermediate) | grader score × 0.1 |
 | `submit_patch` all tests pass — `fix_bug` | `grade_fix_bug()` (0.85–1.0) |
 | `submit_patch` all tests pass — `full_triage` | `grade_full_triage()` (0.0–1.0, includes efficiency) |
-| `submit_patch` partial pass — `fix_bug` / `full_triage` | `grade_fix_bug()` / `grade_full_triage()` on partial results (0.0–0.85) |
+| `submit_patch` partial pass | proportional partial credit (0.0–0.85) |
 | Unknown tool / missing parameters | −0.05 |
 | `full_triage`: patch before reading code or running tests | −0.03 |
 
@@ -136,23 +149,28 @@ Rewards provide signal throughout the trajectory — not just at episode end.
 
 ## Baseline Scores
 
-Produced by running scripted oracle agents at three capability tiers (see `demo_scores.py`):
+### Deterministic oracle agents (no API key required)
 
-| Task | Easy | Medium | Hard |
-|------|------|--------|------|
+Produced by running scripted agents at three capability tiers (see `demo_scores.py`):
+
+| Task | Easy (Oracle) | Medium (Capable) | Hard (Weak) |
+|------|:---:|:---:|:---:|
 | `identify_bug` | 1.000 | 0.400 | 0.053 |
 | `fix_bug` | 1.000 | 0.730 | 0.560 |
 | `full_triage` | 0.960 | 0.760 | 0.408 |
 
 **Agent tiers:**
-- **Oracle (easy)** — correct line, full description, correct patch
-- **Capable (medium)** — line off by 2, partial description, near-correct patch (4/5 tests pass)
-- **Weak (hard)** — wrong line, generic description, no fix submitted
+- **Oracle (easy)** — correct line, full description, correct patch in optimal step sequence
+- **Capable (medium)** — line off by 2, partial description, near-correct patch (fails 1–3 tests)
+- **Weak (hard)** — wrong line, generic description, submits the original buggy code unchanged
 
-> **Difficulty curve**: scores decrease monotonically easy → medium → hard across all tasks.  
-> Hard partial scores reflect that some tests happen to pass even on the unchanged buggy code in the hard scenarios.
+> Scores decrease monotonically easy → medium → hard across all tasks, confirming a meaningful difficulty curve.
 
-`inference.py` runs a real LLM (via `HF_TOKEN` / `API_BASE_URL` / `MODEL_NAME`) through all 3 tasks × 3 scenario tiers and writes `inference_results.json`.
+### LLM baseline (Gemini 2.0 Flash via Google AI Studio)
+
+Real LLM scores from running `inference.py` — see `inference_results.json` for full output.
+
+> Run `inference.py` with your Google AI Studio key to reproduce (see Quick Start below).
 
 ## Quick Start
 
@@ -172,12 +190,20 @@ uvicorn app:app --host 0.0.0.0 --port 7860
 # Server starts at http://localhost:7860
 ```
 
-### 3. Run baseline inference (requires API key)
+### 3. Run deterministic difficulty-curve demo (no API key needed)
 
 ```bash
-export HF_TOKEN="hf_..."          # HuggingFace API key
-export API_BASE_URL="https://router.huggingface.co/v1"
-export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+python demo_scores.py
+```
+
+### 4. Run LLM baseline inference (Google AI Studio — free)
+
+Get a free key at [aistudio.google.com](https://aistudio.google.com), then:
+
+```bash
+export HF_TOKEN="your-google-ai-studio-key"
+export API_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
+export MODEL_NAME="gemini-2.0-flash"
 export ENV_URL="http://localhost:7860"
 
 python inference.py
@@ -185,29 +211,23 @@ python inference.py
 
 Results are written to `inference_results.json`.
 
-### 4. Run deterministic difficulty-curve demo (no API key needed)
-
-```bash
-python demo_scores.py
-```
-
 ### 5. Run tests
 
 ```bash
-pytest tests/ -v   # 40 tests
+pytest tests/ -v   # 44 tests
 ```
 
 ### 6. Validate spec compliance
 
 ```bash
-openenv validate   # or: python -m openenv validate
+openenv validate
 ```
 
 ## Docker Deployment
 
 ```bash
-# Build from repo root (Dockerfile is in server/)
-docker build -f server/Dockerfile -t bug-triage-env .
+# Build from repo root
+docker build -t bug-triage-env .
 docker run -p 7860:7860 bug-triage-env
 # → http://localhost:7860/health
 ```
@@ -216,7 +236,7 @@ docker run -p 7860:7860 bug-triage-env
 
 1. Create a new HF Space with **Docker** SDK
 2. Push the entire project to the Space repository
-3. The `server/Dockerfile` frontmatter configures the Space automatically
+3. The `Dockerfile` at repo root configures the Space automatically
 
 > **Note from OpenEnv tutorial-03**: HTTP `/reset` and `/step` are disabled on HF Spaces.  
 > All stateful episodes use **WebSocket** (`/ws`) — which is what `inference.py` and the `EnvClient` use automatically.
@@ -240,12 +260,15 @@ bug_triage_env/
 ├── scenarios.py           # 22 handcrafted bug scenarios (6 easy · 7 medium · 9 hard)
 ├── graders.py             # 3 deterministic grader functions + TASKS registry
 ├── client.py              # Typed EnvClient subclass
-├── inference.py           # Baseline LLM inference script (OpenAI client)
-├── demo_scores.py         # Difficulty-curve demo (no LLM required)
+├── inference.py           # Baseline LLM inference script (OpenAI-compatible client)
+├── inference_results.json # Real LLM baseline scores (Gemini 2.0 Flash)
+├── demo_scores.py         # Difficulty-curve demo (no LLM or API key required)
+├── demo_scores.json       # Deterministic oracle baseline scores
 ├── openenv.yaml           # OpenEnv manifest
 ├── pyproject.toml         # Package + [project.scripts] entry point
 ├── uv.lock                # Locked dependency graph
 ├── __init__.py
+├── Dockerfile             # Container build (repo root — build context is .)
 ├── server/
 │   ├── app.py                      # FastAPI app + custom /tasks endpoint
 │   ├── bug_triage_environment.py   # Environment implementation
@@ -253,18 +276,20 @@ bug_triage_env/
 │   ├── requirements.txt
 │   └── __init__.py
 └── tests/
-    └── test_environment.py         # 40 unit tests
+    └── test_environment.py         # 44 unit tests
 ```
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `HF_TOKEN` | Yes (for inference) | — | HuggingFace / API key |
-| `API_BASE_URL` | No | `https://router.huggingface.co/v1` | LLM API endpoint |
-| `MODEL_NAME` | No | `Qwen/Qwen2.5-72B-Instruct` | Model identifier |
-| `OPENAI_API_KEY` | No | — | Alternative API key (fallback to `HF_TOKEN`) |
+| `HF_TOKEN` | Yes (for inference) | — | Google AI Studio / HuggingFace API key |
+| `API_BASE_URL` | No | `https://generativelanguage.googleapis.com/v1beta/openai/` | LLM API endpoint |
+| `MODEL_NAME` | No | `gemini-2.0-flash` | Model identifier |
+| `LOCAL_IMAGE_NAME` | No | — | Local Docker image name (if using `from_docker_image()`) |
 | `ENV_URL` | No | `http://localhost:7860` | Bug Triage server URL |
+
+> `demo_scores.py` and all unit tests run without any API key.
 
 ## License
 
