@@ -9,7 +9,14 @@ pinned: false
 
 # Bug Triage & Patch Validation — OpenEnv Environment
 
-> **Debugging accounts for roughly half of all developer time.** This environment trains and evaluates AI agents on the full debugging loop: read code, run tests, localise the fault, and submit a correct patch. Unlike static benchmarks, grading is fully live — the test suite actually executes against the submitted patch, so there is no way to fake a pass.
+> **Debugging accounts for roughly half of all developer time.**
+>
+> Chat, we have always struggled with debugging tasks. Complex issues with code with issues lodged in hard-to-find places make it hard for a newbie like me to get code running quickly. Hence, I came up with this. Please enjoy!
+>
+> <3
+>
+>
+> This environment trains and evaluates AI agents on the full debugging loop: read code, run tests, localise the fault, and submit a correct patch. Unlike static benchmarks, grading is fully live — the test suite actually executes against the submitted patch, so there is no way to fake a pass.
 
 ![Demo](Animation.gif)
 
