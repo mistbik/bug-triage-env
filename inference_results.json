@@ -1,0 +1,39 @@
+{
+  "api_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+  "model": "gemini-2.0-flash",
+  "scenarios": [
+    "easy_off_by_one",
+    "medium_boundary_check",
+    "hard_algorithm_bug"
+  ],
+  "overall_average": 0.8422,
+  "tasks": {
+    "identify_bug": {
+      "task_name": "Bug Identification",
+      "scenarios": [
+        {"scenario_id": "easy_off_by_one",       "difficulty": "easy",   "score": 1.0},
+        {"scenario_id": "medium_boundary_check", "difficulty": "medium", "score": 1.0},
+        {"scenario_id": "hard_algorithm_bug",    "difficulty": "hard",   "score": 0.6}
+      ],
+      "average": 0.8667
+    },
+    "fix_bug": {
+      "task_name": "Bug Fix",
+      "scenarios": [
+        {"scenario_id": "easy_off_by_one",       "difficulty": "easy",   "score": 1.0},
+        {"scenario_id": "medium_boundary_check", "difficulty": "medium", "score": 1.0},
+        {"scenario_id": "hard_algorithm_bug",    "difficulty": "hard",   "score": 0.56}
+      ],
+      "average": 0.8533
+    },
+    "full_triage": {
+      "task_name": "Full Bug Triage",
+      "scenarios": [
+        {"scenario_id": "easy_off_by_one",       "difficulty": "easy",   "score": 0.96},
+        {"scenario_id": "medium_boundary_check", "difficulty": "medium", "score": 0.94},
+        {"scenario_id": "hard_algorithm_bug",    "difficulty": "hard",   "score": 0.52}
+      ],
+      "average": 0.8067
+    }
+  }
+}
